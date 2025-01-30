@@ -24,11 +24,13 @@ def build_embedding(model_path: str = 'Alibaba-NLP/gte-base-en-v1.5', device: st
 
 def embed(text: str, tokenizer: Callable, embedder: Callable, device: str = "cpu", normalize=True):
     batch_dict = tokenizer(text, max_length=8192, padding=True, truncation=True, return_tensors='pt').to(device)
-    outputs = embedder(**batch_dict)
+    with torch.no_grad():
+        outputs = embedder(**batch_dict)
+    del batch_dict
     embedding = outputs.last_hidden_state[:, 0]
     if normalize:
         embedding = F.normalize(embedding, p=2, dim=1)
-    return embedding
+    return embedding.cpu().detach().numpy()
 
 
 def get_datasets(device: str = "cpu", tokenizer: Callable = None, embedder: Callable = None, path: Path = Path.home() / "Data" / "Wikipedia-Toxic-Comments"):

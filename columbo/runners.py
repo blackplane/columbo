@@ -28,7 +28,6 @@ def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_e
 
     with logging_redirect_tqdm():
         embeddings = [embed(text, tokenizer, embedder, device) for text in tqdm(df["comment_text"].values)]
-    embeddings = [e.cpu().detach().numpy() for e in embeddings]
     df["embeddings"] = embeddings
 
     df.to_csv(dataset_dir / dest_csv)
