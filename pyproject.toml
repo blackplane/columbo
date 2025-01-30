@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "columbo"
+version = "0.2.0"
+description = ""
+authors = ["Armin <blackplane@tuta.io>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pandas = "^1.5.3"
+numpy = "^1.24.2"
+matplotlib = "^3.7.0"
+tqdm = "^4.65.0"
+python-dotenv = "^1.0.1"
+torch = "^2.5.1"
+scikit-learn = "^1.6.1"
+openai = "^1.60.2"
+codetiming = "^1.4.0"
+jinja2 = "^3.1.5"
+transformers = "^4.48.1"
+wandb = "^0.19.4"
+
+[tool.poetry.group.dev.dependencies]
+bump2version = "^1.0.1"
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
