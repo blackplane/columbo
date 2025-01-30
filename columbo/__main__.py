@@ -10,6 +10,7 @@ logger.setLevel(logging.INFO)
 @click.command()
 def embed():
     logger.info("Starting 'embeddings' ...")
+    run_embeddings()
 
 
 @click.command()

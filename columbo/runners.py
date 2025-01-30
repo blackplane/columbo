@@ -11,8 +11,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_embeddings.csv"):
-    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_embeddings.csv", device=None):
+    if not device:
+        device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+
     tokenizer, embedder = build_embedding(device=device)
     dataset_dir = Path.cwd() / "Data" / "Wikipedia-Toxic-Comments"
     df = pd.read_csv(dataset_dir / src_csv)
