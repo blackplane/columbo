@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_embeddings.csv", device=None):
     if not device:
         if torch.cuda.is_available():
-            device = torch.device("gpu")
+            device = torch.device("cuda")
         elif torch.backends.mps.is_available():
             device = torch.device("mps")
         else:
