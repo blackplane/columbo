@@ -1,5 +1,5 @@
 import click
-from columbo.runners import run_embeddings
+from columbo.runners import run_embeddings, run_training
 import logging
 
 logging.basicConfig(format="%(asctime)s %(levelname)s - %(message)s", level=logging.INFO)
@@ -16,8 +16,10 @@ def embed(source: str, dest: str):
 
 
 @click.command()
-def train():
+@click.option('-e', '--epochs', type=int)
+def train(epochs: int):
     logger.info("Starting 'train' ...")
+    run_training(epochs)
 
 
 @click.group()

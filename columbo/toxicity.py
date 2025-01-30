@@ -50,6 +50,23 @@ def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "
     return train_ds, val_ds, test_ds
 
 
+class ToxicityClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(ToxicityClassifier, self).__init__()
+        self.model = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.Dropout(p=0.2),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
+
+    def forward(self, x):
+        x = self.model(x)
+        x = torch.sigmoid(x)
+        return x
+
 
 class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
     """A Dataset class for the Wikipedia Toxic Comments Dataset with embeddings."""
