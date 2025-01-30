@@ -24,8 +24,9 @@ def build_embedding(model_path: str = 'Alibaba-NLP/gte-base-en-v1.5', device: st
 
 def embed(text: str, tokenizer: Callable, embedder: Callable, normalize=True, device: str = "cpu"):
     batch_dict = tokenizer(text, max_length=8192, padding=True, truncation=True, return_tensors='pt').to(device)
+    batch_dict = {k: v.to(device) for k, v in batch_dict.items()}
     for k, v in batch_dict.items():
-        v.to(device)
+        print(k, v.device)
     outputs = embedder(**batch_dict)
     embedding = outputs.last_hidden_state[:, 0]
     if normalize:
