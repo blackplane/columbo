@@ -2,6 +2,8 @@
 
 from pathlib import Path
 from typing import Callable
+
+import numpy as np
 import wandb
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -39,6 +41,36 @@ def get_datasets(device: str = "cpu", tokenizer: Callable = None, embedder: Call
     val_ds = WikipediaToxicCommentsDataset(path / "validation.csv", tokenizer=tokenizer, embedder=embedder, device=device)
     test_ds = WikipediaToxicCommentsDataset(path / "test.csv", tokenizer=tokenizer, embedder=embedder, device=device)
     return train_ds, val_ds, test_ds
+
+
+def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "Data" / "Wikipedia-Toxic-Comments"):
+    paths = [path / "balanced_train_with_embeddings.parquet.gzip", path / "validation_with_embeddings.parquet.gzip", path / "test_with_embeddings.parquet.gzip"]
+    datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in paths]
+    train_ds, val_ds, test_ds = datasets
+    return train_ds, val_ds, test_ds
+
+
+
+class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
+    """A Dataset class for the Wikipedia Toxic Comments Dataset with embeddings."""
+    def __init__(self, dataset_file, device: str = "cpu"):
+        if isinstance(dataset_file, str):
+            dataset_file = Path(dataset_file)
+        self._dataset = pd.read_parquet(dataset_file)
+        embeddings = [np.array(list(np.float32(y) for y in x[2:-2].split())) for x in self._dataset["embeddings"]]
+        self._dataset["embeddings"] = embeddings
+        self.device = device
+
+    def __len__(self):
+        return self._dataset.shape[0]
+
+    def __getitem__(self, idx):
+        _, row_id, comment_text, label, embedding = self._dataset.iloc[idx]
+        embedding = torch.tensor(embedding).to(self.device)
+        label = torch.tensor(label).to(self.device)
+        return {
+            "embedding": embedding, "label": label
+        }
 
 
 class  WikipediaToxicCommentsDataset(Dataset):
