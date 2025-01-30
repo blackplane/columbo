@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torch
 import pandas as pd
-import tqdm as tqdm
+from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from columbo.toxicity import embed, build_embedding
 import logging
