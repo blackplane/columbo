@@ -22,7 +22,7 @@ def build_embedding(model_path: str = 'Alibaba-NLP/gte-base-en-v1.5', device: st
             AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
 
 
-def embed(text: str, tokenizer: Callable, embedder: Callable, normalize=True):
+def embed(text: str, tokenizer: Callable, embedder: Callable, normalize=True, device: str = "cpu"):
     batch_dict = tokenizer(text, max_length=8192, padding=True, truncation=True, return_tensors='pt').to(device)
     outputs = embedder(**batch_dict)
     embedding = outputs.last_hidden_state[:, 0]
