@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_embeddings.csv", device=None):
+def run_embeddings(src_csv, dest_csv, device=None):
     if not device:
         if torch.cuda.is_available():
             device = torch.device("cuda")
@@ -23,12 +23,12 @@ def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_e
     logger.info(f"Using device={device}")
 
     tokenizer, embedder = build_embedding(device=device)
-    dataset_dir = Path.cwd() / "Data" / "Wikipedia-Toxic-Comments"
-    df = pd.read_csv(dataset_dir / src_csv)
+    # dataset_dir = Path.cwd() / "Data" / "Wikipedia-Toxic-Comments"
+    df = pd.read_csv(src_csv)
 
     with logging_redirect_tqdm():
         embeddings = [embed(text, tokenizer, embedder, device) for text in tqdm(df["comment_text"].values)]
 
-    logger.info(f"Storing embeddings in file {dataset_dir / dest_csv}")
+    logger.info(f"Storing embeddings in file {dest_csv}")
     df["embeddings"] = embeddings
-    df.to_csv(dataset_dir / dest_csv)
+    df.to_csv(dest_csv)

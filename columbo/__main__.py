@@ -8,9 +8,11 @@ logger.setLevel(logging.INFO)
 
 
 @click.command()
-def embed():
+@click.argument('source')
+@click.argument('dest')
+def embed(source: str, dest: str):
     logger.info("Starting 'embeddings' ...")
-    run_embeddings()
+    run_embeddings(src_csv=source, dest_csv=dest)
 
 
 @click.command()
