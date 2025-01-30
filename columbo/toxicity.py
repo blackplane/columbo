@@ -17,7 +17,7 @@ from functools import partial
 
 
 def build_embedding(model_path: str = 'Alibaba-NLP/gte-base-en-v1.5', device: str = "cpu"):
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path).to(device)
     return partial(tokenizer, max_length=8192, padding=True, truncation=True, return_tensors='pt'), \
             AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
 
