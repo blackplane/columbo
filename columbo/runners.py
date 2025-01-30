@@ -31,4 +31,4 @@ def run_embeddings(src_csv, dest_csv, device=None):
 
     logger.info(f"Storing embeddings in file {dest_csv}")
     df["embeddings"] = embeddings
-    df.to_csv(dest_csv)
+    df.to_parquet('dest_csv', compression='gzip')
