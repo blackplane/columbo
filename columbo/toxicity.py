@@ -21,6 +21,7 @@ def build_embedding(model_path: str = 'Alibaba-NLP/gte-base-en-v1.5', device: st
     return partial(tokenizer, max_length=8192, padding=True, truncation=True, return_tensors='pt'), \
             AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
 
+# https://discuss.huggingface.co/t/bert-embedding-on-gpu/93448
 
 def embed(text: str, tokenizer: Callable, embedder: Callable, device: str = "cpu", normalize=True):
     batch_dict = tokenizer(text, max_length=8192, padding=True, truncation=True, return_tensors='pt').to(device)
