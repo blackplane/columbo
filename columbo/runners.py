@@ -20,6 +20,8 @@ def run_embeddings(src_csv="balanced_train.csv", dest_csv="balanced_train_with_e
         else:
             device = torch.device("cpu")
 
+    logger.info(f"Using device={device}")
+
     tokenizer, embedder = build_embedding(device=device)
     dataset_dir = Path.cwd() / "Data" / "Wikipedia-Toxic-Comments"
     df = pd.read_csv(dataset_dir / src_csv)
