@@ -47,7 +47,11 @@ def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "
     paths = [path / "balanced_train_with_embeddings.parquet.gzip", path / "validation_with_embeddings.parquet.gzip", path / "test_with_embeddings.parquet.gzip"]
     datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in paths]
     train_ds, val_ds, test_ds = datasets
-    return train_ds, val_ds, test_ds
+    return {
+        "train": train_ds,
+        "val": val_ds,
+        "test": test_ds,
+    }
 
 
 class ToxicityClassifier(nn.Module):
@@ -85,9 +89,7 @@ class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
         _, row_id, comment_text, label, embedding = self._dataset.iloc[idx]
         embedding = torch.tensor(embedding).to(self.device)
         label = torch.tensor(label).to(self.device)
-        return {
-            "embedding": embedding, "label": label
-        }
+        return embedding, label
 
 
 class  WikipediaToxicCommentsDataset(Dataset):
