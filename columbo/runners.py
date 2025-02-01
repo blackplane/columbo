@@ -1,17 +1,24 @@
+import string
 from pathlib import Path
+from random import choices
+from typing import Optional, Union, Sequence, Tuple, Mapping
 
 import torch
 import torch.nn as nn
+from ignite.utils import convert_tensor
 from torch.utils.data import DataLoader
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from columbo.toxicity import embed, build_embedding, ToxicityClassifierV1, get_datasets_with_embedding
+    # ToxicityClassifierV2, ToxicityClassifierV3)
 import logging
 import friendlywords as fw
 from codetiming import Timer
 import wandb
+from ignite.engine import Engine, Events, create_supervised_trainer, create_supervised_evaluator
+from ignite.metrics import ConfusionMatrix, Accuracy, Recall, Precision, MetricsLambda
 
 
 logger = logging.getLogger(__name__)
@@ -114,7 +121,56 @@ def run_training(epochs:int=10, device=None):
     logger.info("DONE.")
 
 
+def run_eval(path, device=None, run_id=None):
+    device = get_device(device)
 
+    logger.info("Loading datasets ...")
+    datasets = get_datasets_with_embedding(device, Path() / "Data" / "Wikipedia-Toxic-Comments")
+
+    dataloaders = {
+        k: DataLoader(
+            ds,
+            batch_size=32,
+            shuffle=True,
+            num_workers=0,
+        )
+        for k, ds in datasets.items()
+    }
+
+    # Define Model
+    batch_size, input_dim = next(iter(dataloaders["val"]))[0].shape
+    model = ToxicityClassifierV1(input_size=input_dim, hidden_size=256, output_size=2).to(device)
+    checkpoint = torch.load(path, weights_only=True)
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    # Define Metrics
+    def f1_score(precision, recall):
+        return (2 * precision * recall) / (precision + recall + 1e-20)
+    precision = Precision()
+    recall = Recall()
+    metrics = {
+        "accuracy": Accuracy(),
+        "recall": recall,
+        "precision": precision,
+        "confusion": ConfusionMatrix(num_classes=2),
+        "f1": MetricsLambda(f1_score, precision, recall),
+    }
+
+    evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
+    wandb.init(
+        project="toxicity-classifier",
+        id = run_id,
+    )
+
+    # Run Inference
+    for dl in dataloaders:
+        logger.info(f"Running inference for {dl}")
+        evaluator.run(dataloaders[dl])
+        metrics = evaluator.state.metrics
+        logger.info(f"\n{metrics}")
+        if run_id:
+            wandb.log({"metrics": metrics})
+    wandb.finish()
 
 
 def run_embeddings(src_csv, dest_csv, device=None):

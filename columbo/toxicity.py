@@ -89,9 +89,7 @@ class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
         _, row_id, comment_text, label, embedding = self._dataset.iloc[idx]
         embedding = torch.tensor(embedding).to(self.device)
         label = torch.tensor(label).to(self.device)
-        return {
-            "embedding": embedding, "label": label
-        }
+        return embedding, label
 
 
 class  WikipediaToxicCommentsDataset(Dataset):

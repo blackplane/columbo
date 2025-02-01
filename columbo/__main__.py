@@ -1,5 +1,5 @@
 import click
-from columbo.runners import run_embeddings, run_training
+from columbo.runners import run_embeddings, run_training, run_eval
 import logging
 
 logging.basicConfig(format="%(asctime)s %(levelname)s - %(message)s", level=logging.INFO)
@@ -22,6 +22,14 @@ def train(epochs: int):
     run_training(epochs)
 
 
+@click.command()
+@click.option('-p', '--path', type=str)
+@click.option('-r', '--run', type=str)
+def eval(path: str, run: str):
+    logger.info("Starting 'confusion' ...")
+    run_eval(path, "cpu", run)
+
+
 @click.group()
 @click.version_option()
 def cli():
@@ -31,6 +39,7 @@ def cli():
 def main():
     cli.add_command(embed)
     cli.add_command(train)
+    cli.add_command(eval)
     cli()
 
 
