@@ -72,6 +72,41 @@ class ToxicityClassifierV1(nn.Module):
         return x
 
 
+class ToxicityClassifierV2(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size, dropout=.2):
+        super(ToxicityClassifierV2, self).__init__()
+        pool_kernel_size = pool_stride = 3
+        pool_output_size = (input_size - pool_kernel_size) // pool_stride + 1
+        self.model = nn.Sequential(
+            # nn.Conv1d(input_size, hidden_size, 3, padding=1),
+            nn.Conv1d(1, 1, 3, padding=1),
+            nn.MaxPool1d(kernel_size=3),
+            nn.Linear(pool_output_size, hidden_size),
+            nn.Dropout(p=dropout),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
+
+    def forward(self, x):
+        x = self.model(x)
+        x = torch.sigmoid(x)
+        return x
+
+
+class ToxicityClassifierV3(nn.Module):
+    """Just a linear layer, equuals logistic regression."""
+    def __init__(self, input_size, hidden_size, output_size, dropout=.2):
+        super(ToxicityClassifierV3, self).__init__()
+        self.model = nn.Sequential(
+            nn.Linear(input_size, output_size),
+        )
+
+    def forward(self, x):
+        x = self.model(x)
+        x = torch.sigmoid(x)
+        return x
+
+
 class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
     """A Dataset class for the Wikipedia Toxic Comments Dataset with embeddings."""
     def __init__(self, dataset_file, device: str = "cpu"):

@@ -11,8 +11,8 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from columbo.toxicity import embed, build_embedding, ToxicityClassifierV1, get_datasets_with_embedding
-    # ToxicityClassifierV2, ToxicityClassifierV3)
+from columbo.toxicity import embed, build_embedding, ToxicityClassifierV1, get_datasets_with_embedding, \
+    ToxicityClassifierV2, ToxicityClassifierV3
 import logging
 import friendlywords as fw
 from codetiming import Timer
@@ -52,7 +52,7 @@ def run_training(epochs:int=10, device=None, run_id=None):
         for k, ds in datasets.items()
     }
     batch_size, input_dim = next(iter(dataloaders["train"]))[0].shape
-    model = ToxicityClassifierV1(input_size=input_dim, hidden_size=256, output_size=2).to(device)
+    model = ToxicityClassifierV3(input_size=input_dim, hidden_size=256, output_size=2).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
     learning_rate = 0.001
@@ -121,7 +121,7 @@ def run_training(epochs:int=10, device=None, run_id=None):
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': loss,
         },
-        f"toxicity_classifier_{'-'.join(wandb.run.name)}_{loss:0.4f}_{run_id}.pth"
+        f"toxicity_classifier_{wandb.run.name}_{loss:0.4f}_{run_id}.pth"
     )
     wandb.finish()
     logger.info("DONE.")
@@ -145,7 +145,7 @@ def run_eval(path, device=None, run_id=None):
 
     # Define Model
     batch_size, input_dim = next(iter(dataloaders["val"]))[0].shape
-    model = ToxicityClassifierV1(input_size=input_dim, hidden_size=256, output_size=2).to(device)
+    model = ToxicityClassifierV3(input_size=input_dim, hidden_size=256, output_size=2).to(device)
     checkpoint = torch.load(path, weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])
 
