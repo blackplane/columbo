@@ -67,6 +67,7 @@ def run_training(epochs:int=10, device=None, run_id=None):
     wandb.init(
         # set the wandb project where this run will be logged
         project="toxicity-classifier",
+        id=run_id,
         # track hyperparameters and run metadata
         config={
             "learning_rate": learning_rate,
