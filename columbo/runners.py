@@ -19,6 +19,7 @@ from codetiming import Timer
 import wandb
 from ignite.engine import Engine, Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import ConfusionMatrix, Accuracy, Recall, Precision, MetricsLambda
+from columbo.utils import preprocess
 
 
 logger = logging.getLogger(__name__)
@@ -195,7 +196,10 @@ def run_embeddings(src_csv, dest_csv, device=None):
     df = pd.read_csv(src_csv)
 
     with logging_redirect_tqdm():
-        embeddings = [embed(text, tokenizer, embedder, device) for text in tqdm(df["comment_text"].values)]
+        embeddings = [
+            embed(preprocess(text), tokenizer, embedder, device)
+            for text in tqdm(df["comment_text"].values)
+        ]
 
     logger.info(f"Storing embeddings in file {dest_csv}")
     df["embeddings"] = embeddings
