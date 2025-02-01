@@ -37,7 +37,7 @@ def get_device(device):
     return device
 
 
-def run_training(epochs:int=10, device=None):
+def run_training(epochs:int=10, device=None, run_id=None):
     device = get_device(device)
 
     logger.info("Loading datasets ...")
@@ -51,7 +51,7 @@ def run_training(epochs:int=10, device=None):
         )
         for k, ds in datasets.items()
     }
-    batch_size, input_dim = next(iter(dataloaders["train"]))["embedding"].shape
+    batch_size, input_dim = next(iter(dataloaders["train"]))[0].shape
     model = ToxicityClassifierV1(input_size=input_dim, hidden_size=256, output_size=2).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
@@ -61,6 +61,9 @@ def run_training(epochs:int=10, device=None):
     epoch_timer = Timer(name="epoch_timer", logger=None)
     batch_timer = Timer(name="batch_timer", logger=None)
 
+    if not run_id:
+        run_id = fw.generate("po", separator="-")
+    logger.info(f"Registering run id {run_id} with wandb")
     wandb.init(
         # set the wandb project where this run will be logged
         project="toxicity-classifier",
@@ -81,7 +84,7 @@ def run_training(epochs:int=10, device=None):
         logger.info(f"---- Starting epoch {epoch} [last={epoch_timer.last:.2f} s | val_loss={val_loss:.4f}] ----")
         for idx, sample in enumerate(dataloaders["train"]):
             batch_timer.start()
-            X, y = sample["embedding"], sample["label"]
+            X, y = sample[0], sample[1]
             optimizer.zero_grad()
             y_pred = model(X)
             y_oh = torch.nn.functional.one_hot(y, num_classes=2).float()
@@ -96,10 +99,11 @@ def run_training(epochs:int=10, device=None):
                 logger.info(f"{idx:5} Loss = {loss_np}")
         epoch_timer.stop()
         # Validation phase
+        logger.info("Validating batch")
         model.eval()
         with torch.no_grad():
             for sample in dataloaders["val"]:
-                X, y = sample["embedding"], sample["label"]
+                X, y = sample[0], sample[1]
                 y_pred = model(X)
                 y_oh = torch.nn.functional.one_hot(y, num_classes=2).float()
                 loss = loss_fn(y_pred.squeeze(), y_oh)
