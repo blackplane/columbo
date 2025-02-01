@@ -1,8 +1,9 @@
 import click
 from columbo.runners import run_embeddings, run_training, run_eval
 import logging
+from rich.logging import RichHandler
 
-logging.basicConfig(format="%(asctime)s %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=[RichHandler()])
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -18,7 +19,7 @@ def embed(source: str, dest: str):
 @click.command()
 @click.option('-e', '--epochs', type=int)
 def train(epochs: int):
-    logger.info("Starting 'train' ...")
+    logger.info("Starting [bold blue]train[/]' ...", extra={"markup": True})
     run_training(epochs)
 
 
@@ -26,7 +27,7 @@ def train(epochs: int):
 @click.option('-p', '--path', type=str)
 @click.option('-r', '--run', type=str)
 def eval(path: str, run: str):
-    logger.info("Starting 'confusion' ...")
+    logger.info("Starting [bold blue]eval[/] ...", extra={"markup": True})
     run_eval(path, "cpu", run)
 
 

@@ -2,7 +2,7 @@ import string
 from pathlib import Path
 from random import choices
 from typing import Optional, Union, Sequence, Tuple, Mapping
-
+from rich.logging import RichHandler
 import torch
 import torch.nn as nn
 from ignite.utils import convert_tensor
@@ -164,8 +164,9 @@ def run_eval(path, device=None, run_id=None):
 
     evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
     wandb.init(
-        project="toxicity-classifier",
+        project = "toxicity-classifier",
         id = run_id,
+        resume = "allow",
     )
 
     # Run Inference
