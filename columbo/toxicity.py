@@ -55,13 +55,13 @@ def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "
 
 
 class ToxicityClassifierV1(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size, dropout=.2):
         super(ToxicityClassifierV1, self).__init__()
         self.model = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
-            nn.Dropout(p=0.2),
+            nn.Dropout(p=dropout),
             nn.ReLU(),
             nn.Linear(hidden_size, output_size)
         )

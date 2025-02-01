@@ -72,7 +72,9 @@ def run_training(epochs:int=10, device=None, run_id=None):
             "learning_rate": learning_rate,
             "architecture": "MLP",
             "dataset": dataloaders["train"].dataset.__class__,
+            "optimizer": optimizer.__class__.__name__,
             "epochs": epochs,
+            "resume": "allow",
         }
     )
 
@@ -81,7 +83,7 @@ def run_training(epochs:int=10, device=None, run_id=None):
         epoch_timer.start()
         val_loss = -1.
         model.train()
-        logger.info(f"---- Starting epoch {epoch} [last={epoch_timer.last:.2f} s | val_loss={val_loss:.4f}] ----")
+        logger.info(f"---- Starting epoch {epoch} [last={epoch_timer.last:.2f} s | val_loss={val_loss:.4f} | len={len(dataloaders['train'])}]  ----")
         for idx, sample in enumerate(dataloaders["train"]):
             batch_timer.start()
             X, y = sample[0], sample[1]
@@ -112,16 +114,15 @@ def run_training(epochs:int=10, device=None, run_id=None):
         val_loss /= len(dataloaders["val"])
         wandb.log({"val_loss_avg": val_loss})
 
-    wandb.finish()
-
     torch.save({
         'epoch': epochs,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': loss,
         },
-        f"toxicity_classifier_{fw.generate('po', separator='-')}.pth"
+        f"toxicity_classifier_{'-'.join(wandb.run.name)}_{loss:0.4f}_{run_id}.pth"
     )
+    wandb.finish()
     logger.info("DONE.")
 
 
