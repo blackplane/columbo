@@ -68,21 +68,23 @@ def run_training(epochs:int=10, device=None, run_id=None):
         # set the wandb project where this run will be logged
         project="toxicity-classifier",
         id=run_id,
+        resume="allow",
         # track hyperparameters and run metadata
         config={
             "learning_rate": learning_rate,
             "architecture": "MLP",
+            "model": model.__class__.__name__,
             "dataset": dataloaders["train"].dataset.__class__,
             "optimizer": optimizer.__class__.__name__,
             "epochs": epochs,
-            "resume": "allow",
         }
     )
+    val_loss = 0.
 
     for epoch in range(epochs):
         # Training phase
         epoch_timer.start()
-        val_loss = -1.
+
         model.train()
         logger.info(f"---- Starting epoch {epoch} [last={epoch_timer.last:.2f} s | val_loss={val_loss:.4f} | len={len(dataloaders['train'])}]  ----")
         for idx, sample in enumerate(dataloaders["train"]):
@@ -114,6 +116,7 @@ def run_training(epochs:int=10, device=None, run_id=None):
 
         val_loss /= len(dataloaders["val"])
         wandb.log({"val_loss_avg": val_loss})
+        val_loss = 0.
 
     torch.save({
         'epoch': epochs,
@@ -152,6 +155,7 @@ def run_eval(path, device=None, run_id=None):
     # Define Metrics
     def f1_score(precision, recall):
         return (2 * precision * recall) / (precision + recall + 1e-20)
+
     precision = Precision()
     recall = Recall()
     metrics = {
@@ -176,6 +180,8 @@ def run_eval(path, device=None, run_id=None):
         metrics = evaluator.state.metrics
         logger.info(f"\n{metrics}")
         if run_id:
+            confusion_table = wandb.Table(data=pd.DataFrame(metrics["confusion"]))
+            metrics["confusion"] = confusion_table
             wandb.log({"metrics": metrics})
     wandb.finish()
 
