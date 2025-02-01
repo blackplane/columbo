@@ -47,12 +47,16 @@ def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "
     paths = [path / "balanced_train_with_embeddings.parquet.gzip", path / "validation_with_embeddings.parquet.gzip", path / "test_with_embeddings.parquet.gzip"]
     datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in paths]
     train_ds, val_ds, test_ds = datasets
-    return train_ds, val_ds, test_ds
+    return {
+        "train": train_ds,
+        "val": val_ds,
+        "test": test_ds,
+    }
 
 
-class ToxicityClassifier(nn.Module):
+class ToxicityClassifierV1(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
-        super(ToxicityClassifier, self).__init__()
+        super(ToxicityClassifierV1, self).__init__()
         self.model = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.ReLU(),

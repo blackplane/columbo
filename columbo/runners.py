@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-from columbo.toxicity import embed, build_embedding, ToxicityClassifier, get_datasets_with_embedding
+from columbo.toxicity import embed, build_embedding, ToxicityClassifierV1, get_datasets_with_embedding
 import logging
 import friendlywords as fw
 from codetiming import Timer
@@ -17,37 +17,35 @@ import wandb
 logger = logging.getLogger(__name__)
 
 
-def get_device():
-    if torch.cuda.is_available():
+def get_device(device):
+    if device is not None:
+        pass
+    elif torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
+    logger.info(f"Using device={device}")
     return device
 
 
 def run_training(epochs:int=10, device=None):
-    if not device:
-        device = get_device()
-    logger.info(f"Using device={device}")
+    device = get_device(device)
 
     logger.info("Loading datasets ...")
-    train_ds, val_ds, test_ds = get_datasets_with_embedding(device, Path() / "Data" / "Wikipedia-Toxic-Comments")
-    train_dataloader = DataLoader(
-        train_ds,
-        batch_size=32,
-        shuffle=True,
-        num_workers=0,
-    )
-    val_dataloader = DataLoader(
-        val_ds,
-        batch_size=32,
-        shuffle=True,
-        num_workers=0,
-    )
-    batch_size, input_dim = next(iter(train_dataloader))["embedding"].shape
-    model = ToxicityClassifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
+    datasets = get_datasets_with_embedding(device, Path() / "Data" / "Wikipedia-Toxic-Comments")
+    dataloaders = {
+        k: DataLoader(
+            ds,
+            batch_size=32,
+            shuffle=True,
+            num_workers=0,
+        )
+        for k, ds in datasets.items()
+    }
+    batch_size, input_dim = next(iter(dataloaders["train"]))["embedding"].shape
+    model = ToxicityClassifierV1(input_size=input_dim, hidden_size=256, output_size=2).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
     learning_rate = 0.001
@@ -63,7 +61,7 @@ def run_training(epochs:int=10, device=None):
         config={
             "learning_rate": learning_rate,
             "architecture": "MLP",
-            "dataset": train_dataloader.dataset.__class__,
+            "dataset": dataloaders["train"].dataset.__class__,
             "epochs": epochs,
         }
     )
@@ -74,7 +72,7 @@ def run_training(epochs:int=10, device=None):
         val_loss = -1.
         model.train()
         logger.info(f"---- Starting epoch {epoch} [last={epoch_timer.last:.2f} s | val_loss={val_loss:.4f}] ----")
-        for idx, sample in enumerate(train_dataloader):
+        for idx, sample in enumerate(dataloaders["train"]):
             batch_timer.start()
             X, y = sample["embedding"], sample["label"]
             optimizer.zero_grad()
@@ -88,19 +86,19 @@ def run_training(epochs:int=10, device=None):
             wandb.log({"loss": loss_np, "loss_ma12": np.mean(losses[-12:]), "loss_ma32": np.mean(losses[-32:])})
             batch_timer.stop()
             if idx % 50 == 0:
-                logger.info(f"Loss = {loss_np}")
+                logger.info(f"{idx:5} Loss = {loss_np}")
         epoch_timer.stop()
         # Validation phase
         model.eval()
         with torch.no_grad():
-            for sample in val_dataloader:
+            for sample in dataloaders["val"]:
                 X, y = sample["embedding"], sample["label"]
                 y_pred = model(X)
                 y_oh = torch.nn.functional.one_hot(y, num_classes=2).float()
                 loss = loss_fn(y_pred.squeeze(), y_oh)
                 val_loss +=  loss.cpu().detach().numpy()
 
-        val_loss /= len(val_dataloader)
+        val_loss /= len(dataloaders["val"])
         wandb.log({"val_loss_avg": val_loss})
 
     wandb.finish()
@@ -120,8 +118,7 @@ def run_training(epochs:int=10, device=None):
 
 
 def run_embeddings(src_csv, dest_csv, device=None):
-    if not device:
-        device = get_device()
+    device = get_device(device)
     logger.info(f"Using device={device}")
 
     tokenizer, embedder = build_embedding(device=device)
