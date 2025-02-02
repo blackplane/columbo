@@ -1,7 +1,7 @@
 import string
 from pathlib import Path
 from random import choices
-from typing import Optional, Union, Sequence, Tuple, Mapping
+from typing import Optional, Union, Sequence, Tuple, Mapping, Callable
 from rich.logging import RichHandler
 import torch
 import torch.nn as nn
@@ -24,6 +24,12 @@ from columbo.utils import preprocess
 
 logger = logging.getLogger(__name__)
 
+CLASSIFIER_MAP = {
+    "v1": ToxicityClassifierV1,
+    "v2": ToxicityClassifierV2,
+    "v3": ToxicityClassifierV3,
+}
+
 
 def get_device(device):
     if device is not None:
@@ -38,8 +44,13 @@ def get_device(device):
     return device
 
 
-def run_training(epochs:int=10, device=None, run_id=None):
+def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=None, run_id=None):
     device = get_device(device)
+    if not classifier:
+        classifier = ToxicityClassifierV3
+    elif isinstance(classifier, str):
+        assert classifier in CLASSIFIER_MAP, f"Classifier {classifier} not part of CLASSIFIER_MAP={CLASSIFIER_MAP}."
+        classifier = CLASSIFIER_MAP[classifier]
 
     logger.info("Loading datasets ...")
     datasets = get_datasets_with_embedding(device, Path() / "Data" / "Wikipedia-Toxic-Comments")
@@ -53,7 +64,7 @@ def run_training(epochs:int=10, device=None, run_id=None):
         for k, ds in datasets.items()
     }
     batch_size, input_dim = next(iter(dataloaders["train"]))[0].shape
-    model = ToxicityClassifierV3(input_size=input_dim, hidden_size=256, output_size=2).to(device)
+    model = classifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
     learning_rate = 0.001

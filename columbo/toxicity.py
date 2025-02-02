@@ -36,13 +36,6 @@ def embed(text: str, tokenizer: Callable, embedder: Callable, device: str = "cpu
     return embedding.cpu().detach().numpy()
 
 
-def get_datasets(device: str = "cpu", tokenizer: Callable = None, embedder: Callable = None, path: Path = Path.home() / "Data" / "Wikipedia-Toxic-Comments"):
-    train_ds = WikipediaToxicCommentsDataset(path / "balanced_train.csv", tokenizer=tokenizer, embedder=embedder, device=device)
-    val_ds = WikipediaToxicCommentsDataset(path / "validation.csv", tokenizer=tokenizer, embedder=embedder, device=device)
-    test_ds = WikipediaToxicCommentsDataset(path / "test.csv", tokenizer=tokenizer, embedder=embedder, device=device)
-    return train_ds, val_ds, test_ds
-
-
 def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "Data" / "Wikipedia-Toxic-Comments"):
     paths = ["balanced_train_with_clean_embeddings.parquet.gzip", "validation_with_clean_embeddings.parquet.gzip", "test_with_clean_embeddings.parquet.gzip"]
     paths = [path / p for p in paths]
@@ -126,32 +119,3 @@ class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
         embedding = torch.tensor(embedding).to(self.device)
         label = torch.tensor(label).to(self.device)
         return embedding, label
-
-
-class  WikipediaToxicCommentsDataset(Dataset):
-    """A Dataset class for the Wikipedia Toxic Comments Dataset"""
-    def __init__(self, dataset_file: Path = None, tokenizer: Callable = None, embedder: Callable = None, device: str = "cpu"):
-        if not (dataset_file.exists() and dataset_file.is_file()):
-            dataset_file = Path.home() / "Data" / "Wikipedia-Toxic-Comments" / "balanced_train.csv"
-        self._dataset = pd.read_csv(dataset_file)
-        if not tokenizer and not embedder:
-            tokenizer, embedder = build_embedding(device=device)
-        self.tokenizer = tokenizer
-        self.embedder = embedder
-        self.device = device
-
-    def __len__(self):
-        return self._dataset.shape[0]
-
-    def __getitem__(self, idx):
-        _, x, label = self._dataset.iloc[idx]
-        if self.tokenizer:
-            x = self.tokenizer(x).to(self.device)
-        if self.embedder:
-            x = self.embedder(**x)
-            x = x.last_hidden_state[:, 0]
-        label = torch.tensor(label).to(self.device)
-        return {
-            "embedding": x, "label": label
-        }
-
