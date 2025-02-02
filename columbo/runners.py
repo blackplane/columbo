@@ -30,6 +30,14 @@ CLASSIFIER_MAP = {
     "v3": ToxicityClassifierV3,
 }
 
+def get_classifier(classifier: Union[str, Callable]=None):
+    if not classifier:
+        classifier = ToxicityClassifierV3
+    elif isinstance(classifier, str):
+        assert classifier in CLASSIFIER_MAP, f"Classifier {classifier} not part of CLASSIFIER_MAP={CLASSIFIER_MAP}."
+        classifier = CLASSIFIER_MAP[classifier]
+    return classifier
+
 
 def get_device(device):
     if device is not None:
@@ -46,11 +54,7 @@ def get_device(device):
 
 def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=None, run_id=None):
     device = get_device(device)
-    if not classifier:
-        classifier = ToxicityClassifierV3
-    elif isinstance(classifier, str):
-        assert classifier in CLASSIFIER_MAP, f"Classifier {classifier} not part of CLASSIFIER_MAP={CLASSIFIER_MAP}."
-        classifier = CLASSIFIER_MAP[classifier]
+    classifier = get_classifier(classifier)
 
     logger.info("Loading datasets ...")
     datasets = get_datasets_with_embedding(device, Path() / "Data" / "Wikipedia-Toxic-Comments")
@@ -84,7 +88,7 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         # track hyperparameters and run metadata
         config={
             "learning_rate": learning_rate,
-            "architecture": "MLP",
+            "architecture": model.ARCH,
             "model": model.__class__.__name__,
             "dataset": dataloaders["train"].dataset.__class__,
             "optimizer": optimizer.__class__.__name__,
@@ -142,8 +146,9 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
     logger.info("DONE.")
 
 
-def run_eval(path, device=None, run_id=None):
+def run_eval(path, classifier: Union[str, Callable]=None, device=None, run_id=None):
     device = get_device(device)
+    classifier = get_classifier(classifier)
 
     logger.info("Loading datasets ...")
     datasets = get_datasets_with_embedding(device, Path() / "Data" / "Wikipedia-Toxic-Comments")
@@ -160,7 +165,7 @@ def run_eval(path, device=None, run_id=None):
 
     # Define Model
     batch_size, input_dim = next(iter(dataloaders["val"]))[0].shape
-    model = ToxicityClassifierV3(input_size=input_dim, hidden_size=256, output_size=2).to(device)
+    model = classifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
     checkpoint = torch.load(path, weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])
 

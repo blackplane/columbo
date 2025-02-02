@@ -12,6 +12,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from torch import nn
 import torch.nn.functional as F
+from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
@@ -39,7 +40,7 @@ def embed(text: str, tokenizer: Callable, embedder: Callable, device: str = "cpu
 def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "Data" / "Wikipedia-Toxic-Comments"):
     paths = ["balanced_train_with_clean_embeddings.parquet.gzip", "validation_with_clean_embeddings.parquet.gzip", "test_with_clean_embeddings.parquet.gzip"]
     paths = [path / p for p in paths]
-    datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in paths]
+    datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in tqdm(paths)]
     train_ds, val_ds, test_ds = datasets
     return {
         "train": train_ds,
@@ -49,6 +50,7 @@ def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "
 
 
 class ToxicityClassifierV1(nn.Module):
+    ARCH = "MLP"
     def __init__(self, input_size, hidden_size, output_size, dropout=.2):
         super(ToxicityClassifierV1, self).__init__()
         self.model = nn.Sequential(
@@ -67,6 +69,7 @@ class ToxicityClassifierV1(nn.Module):
 
 
 class ToxicityClassifierV2(nn.Module):
+    ARCH = "CNN"
     def __init__(self, input_size, hidden_size, output_size, dropout=.2):
         super(ToxicityClassifierV2, self).__init__()
         pool_kernel_size = pool_stride = 3
@@ -88,6 +91,7 @@ class ToxicityClassifierV2(nn.Module):
 
 
 class ToxicityClassifierV3(nn.Module):
+    ARCH = "MLP"
     """Just a linear layer, equuals logistic regression."""
     def __init__(self, input_size, hidden_size, output_size, dropout=.2):
         super(ToxicityClassifierV3, self).__init__()
