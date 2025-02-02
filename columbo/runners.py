@@ -106,8 +106,9 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         for idx, sample in enumerate(dataloaders["train"]):
             batch_timer.start()
             X, y = sample[0], sample[1]
+            X1 = X.unsqueeze(dim=1)
             optimizer.zero_grad()
-            y_pred = model(X)
+            y_pred = model(X1)
             y_oh = torch.nn.functional.one_hot(y, num_classes=2).float()
             loss = loss_fn(y_pred.squeeze(), y_oh)
             loss.backward()
@@ -125,7 +126,8 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         with torch.no_grad():
             for sample in dataloaders["val"]:
                 X, y = sample[0], sample[1]
-                y_pred = model(X)
+                X1 = X.unsqueeze(dim=1)
+                y_pred = model(X1)
                 y_oh = torch.nn.functional.one_hot(y, num_classes=2).float()
                 loss = loss_fn(y_pred.squeeze(), y_oh)
                 val_loss +=  loss.cpu().detach().numpy()
