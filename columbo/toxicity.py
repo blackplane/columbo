@@ -44,7 +44,8 @@ def get_datasets(device: str = "cpu", tokenizer: Callable = None, embedder: Call
 
 
 def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "Data" / "Wikipedia-Toxic-Comments"):
-    paths = [path / "balanced_train_with_embeddings.parquet.gzip", path / "validation_with_embeddings.parquet.gzip", path / "test_with_embeddings.parquet.gzip"]
+    paths = ["balanced_train_with_embeddings.parquet.gzip", "validation_with_embeddings.parquet.gzip", "test_with_embeddings.parquet.gzip"]
+    paths = [path / p for p in paths]
     datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in paths]
     train_ds, val_ds, test_ds = datasets
     return {
