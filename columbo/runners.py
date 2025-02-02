@@ -67,7 +67,7 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         )
         for k, ds in datasets.items()
     }
-    batch_size, input_dim = next(iter(dataloaders["train"]))[0].shape
+    batch_size, input_dim, _ = next(iter(dataloaders["train"]))[0].shape
     model = classifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
@@ -136,6 +136,9 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         wandb.log({"val_loss_avg": val_loss})
         val_loss = 0.
 
+    metrics = run_metrics(model, dataloaders["val"], device)
+
+
     torch.save({
         'epoch': epochs,
         'model_state_dict': model.state_dict(),
@@ -146,6 +149,25 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
     )
     wandb.finish()
     logger.info("DONE.")
+
+def run_metrics(model, dataloader, device):
+    precision = Precision()
+    recall = Recall()
+    def f1_score(precision, recall):
+        return (2 * precision * recall) / (precision + recall + 1e-20)
+    metrics = {
+        "accuracy": Accuracy(),
+        "recall": recall,
+        "precision": precision,
+        "confusion": ConfusionMatrix(num_classes=2),
+        "f1": MetricsLambda(f1_score, precision, recall),
+    }
+    evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
+    logger.info(f"Running inference for {dataloader}")
+    evaluator.run(dataloader)
+    metrics = evaluator.state.metrics
+    logger.info(f"\n{metrics}")
+    return metrics
 
 
 def run_eval(path, classifier: Union[str, Callable]=None, device=None, run_id=None):
@@ -166,7 +188,7 @@ def run_eval(path, classifier: Union[str, Callable]=None, device=None, run_id=No
     }
 
     # Define Model
-    batch_size, input_dim = next(iter(dataloaders["val"]))[0].shape
+    batch_size, input_dim, _ = next(iter(dataloaders["val"]))[0].shape
     model = classifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
     checkpoint = torch.load(path, weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])
