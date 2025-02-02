@@ -122,7 +122,7 @@ class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
         return self._dataset.shape[0]
 
     def __getitem__(self, idx):
-        _, row_id, comment_text, label, embedding = self._dataset.iloc[idx]
+        row_id, comment_text, label, embedding = self._dataset.iloc[idx]
         embedding = torch.tensor(embedding).to(self.device)
         label = torch.tensor(label).to(self.device)
         return embedding, label
