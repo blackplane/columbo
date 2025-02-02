@@ -187,7 +187,7 @@ def run_eval(path, device=None, run_id=None):
     wandb.finish()
 
 
-def run_embeddings(src_csv, dest_csv, device=None):
+def run_embeddings(src_csv, dest_parquet, device=None):
     device = get_device(device)
     logger.info(f"Using device={device}")
 
@@ -201,6 +201,6 @@ def run_embeddings(src_csv, dest_csv, device=None):
             for text in tqdm(df["comment_text"].values)
         ]
 
-    logger.info(f"Storing embeddings in file {dest_csv}")
-    df["embeddings"] = embeddings
-    df.to_parquet('dest_csv', compression='gzip')
+    logger.info(f"Storing embeddings in file {dest_parquet}")
+    df["embeddings"] = [str(x) for x in embeddings]
+    df.to_parquet(dest_parquet, compression='gzip')
