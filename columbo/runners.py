@@ -137,7 +137,7 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         wandb.log({"val_loss_avg": val_loss})
         val_loss = 0.
 
-    run_metrics(model, dataloaders["test"], device, logger="wandb")
+    run_metrics(model, dataloaders["test"], device, log="wandb")
 
     torch.save({
         'epoch': epochs,
@@ -150,7 +150,7 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
     wandb.finish()
     logger.info("DONE.")
 
-def run_metrics(model, dataloader, device, logger:str=None):
+def run_metrics(model, dataloader, device, log:str=None):
     precision = Precision()
     recall = Recall()
     def f1_score(precision, recall):
@@ -167,7 +167,7 @@ def run_metrics(model, dataloader, device, logger:str=None):
     evaluator.run(dataloader)
     metrics = evaluator.state.metrics
     logger.info(f"\n{metrics}")
-    if logger == "wandb":
+    if log == "wandb":
         wandb.log({
             "val_f1": metrics["f1"],
             "val_precision": metrics["precision"],
