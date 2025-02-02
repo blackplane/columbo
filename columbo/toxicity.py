@@ -40,14 +40,14 @@ def embed(text: str, tokenizer: Callable, embedder: Callable, device: str = "cpu
 def get_datasets_with_embedding(device: str = "cpu", path: Path = Path("..") / "Data" / "Wikipedia-Toxic-Comments"):
     with open("config.toml", "r") as f:
         config = toml.load(f)
-    # paths = ["balanced_train_with_clean_embeddings.parquet.gzip", "validation_with_clean_embeddings.parquet.gzip", "test_with_clean_embeddings.parquet.gzip"]
+    root = Path(config["datasets"]["root"])
+    assert root.exists(), f"Root path {root} does not exist"
     names = config["datasets"]["labels"]
-    paths = [path / p for p in config["datasets"]["paths"]]
+    paths = [root / p for p in config["datasets"]["paths"]]
     datasets = [WikipediaToxicCommentsWithEmbeddingsDataset(path, device) for path in tqdm(paths)]
-    # train_ds, val_ds, test_ds = datasets
     return {
         k: v
-        for k, v in zip(names, paths)
+        for k, v in zip(names, datasets)
     }
 
 
