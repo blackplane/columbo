@@ -1,0 +1,7 @@
+[datasets]
+labels = ["train", "validation", "test"]
+paths = [
+    "balanced_train_with_clean_embeddings.parquet.gzip",
+    "validation_with_clean_embeddings.parquet.gzip",
+    "test_with_clean_embeddings.parquet.gzip"
+]

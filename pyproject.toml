@@ -27,6 +27,7 @@ pytorch-ignite = "^0.5.1"
 rich = "^13.9.4"
 emoji = "^2.14.1"
 nltk = "^3.9.1"
+toml = "^0.10.2"
 
 [tool.poetry.group.dev.dependencies]
 bump2version = "^1.0.1"

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Callable
-
+import toml
 import numpy as np
 import wandb
 import pandas as pd
@@ -122,4 +122,4 @@ class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
         row_id, comment_text, label, embedding = self._dataset.iloc[idx]
         embedding = torch.tensor(embedding).to(self.device)
         label = torch.tensor(label).to(self.device)
-        return embedding, label
+        return embedding.unsqueeze(dim=1), label
