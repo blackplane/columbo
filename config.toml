@@ -1,5 +1,6 @@
 [datasets]
 labels = ["train", "validation", "test"]
+root = "Data/Wikipedia-Toxic-Comments"
 paths = [
     "balanced_train_with_clean_embeddings.parquet.gzip",
     "validation_with_clean_embeddings.parquet.gzip",
