@@ -67,7 +67,8 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         )
         for k, ds in datasets.items()
     }
-    batch_size, input_dim, _ = next(iter(dataloaders["train"]))[0].shape
+    a = next(iter(dataloaders["val"]))[0]
+    batch_size, _, input_dim = next(iter(dataloaders["train"]))[0].shape
     model = classifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
@@ -136,8 +137,7 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
         wandb.log({"val_loss_avg": val_loss})
         val_loss = 0.
 
-    metrics = run_metrics(model, dataloaders["val"], device)
-
+    run_metrics(model, dataloaders["test"], device, logger="wandb")
 
     torch.save({
         'epoch': epochs,
@@ -150,7 +150,7 @@ def run_training(epochs:int=10, classifier: Union[str, Callable]=None, device=No
     wandb.finish()
     logger.info("DONE.")
 
-def run_metrics(model, dataloader, device):
+def run_metrics(model, dataloader, device, logger:str=None):
     precision = Precision()
     recall = Recall()
     def f1_score(precision, recall):
@@ -167,6 +167,13 @@ def run_metrics(model, dataloader, device):
     evaluator.run(dataloader)
     metrics = evaluator.state.metrics
     logger.info(f"\n{metrics}")
+    if logger == "wandb":
+        wandb.log({
+            "val_f1": metrics["f1"],
+            "val_precision": metrics["precision"],
+            "val_recall": metrics["recall"],
+            "val_accuracy": metrics["accuracy"]
+        })
     return metrics
 
 
@@ -188,7 +195,7 @@ def run_eval(path, classifier: Union[str, Callable]=None, device=None, run_id=No
     }
 
     # Define Model
-    batch_size, input_dim, _ = next(iter(dataloaders["val"]))[0].shape
+    batch_size, _, input_dim = next(iter(dataloaders["val"]))[0].shape
     model = classifier(input_size=input_dim, hidden_size=256, output_size=2).to(device)
     checkpoint = torch.load(path, weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])

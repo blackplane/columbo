@@ -124,4 +124,4 @@ class  WikipediaToxicCommentsWithEmbeddingsDataset(Dataset):
         row_id, comment_text, label, embedding = self._dataset.iloc[idx]
         embedding = torch.tensor(embedding).to(self.device)
         label = torch.tensor(label).to(self.device)
-        return embedding.unsqueeze(dim=1), label
+        return embedding.unsqueeze(dim=0), label
