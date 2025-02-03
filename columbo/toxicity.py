@@ -119,7 +119,10 @@ class ToxicityClassifierV4(nn.Module):
             nn.Linear(pool_output_size, hidden_size),
             nn.Dropout(p=dropout),
             nn.ReLU(),
-            nn.Linear(hidden_size, output_size)
+            nn.Linear(pool_output_size, hidden_size//2),
+            nn.Dropout(p=dropout),
+            nn.ReLU(),
+            nn.Linear(hidden_size//2, output_size)
         )
 
     def forward(self, x):
