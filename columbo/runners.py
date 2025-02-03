@@ -162,7 +162,22 @@ def run_metrics(model, dataloader, device, log:str=None):
         "confusion": ConfusionMatrix(num_classes=2),
         "f1": MetricsLambda(f1_score, precision, recall),
     }
-    evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
+
+    # def prepare_batch(
+    #         batch: Sequence[torch.Tensor], device: Optional[Union[str, torch.device]] = None, non_blocking: bool = False
+    # ) -> Tuple[Union[torch.Tensor, Sequence, Mapping, str, bytes], ...]:
+    #     """Prepare batch for training or evaluation: pass to a device with options."""
+    #     x, y = batch
+    #     return (
+    #         convert_tensor(x, device=device, non_blocking=non_blocking),
+    #         convert_tensor(y, device=device, non_blocking=non_blocking),
+    #     )
+
+    def model_transform(x):
+        a = torch.argmax(x.to(torch.float32), dim=2).squeeze(dim=1)
+        return a
+
+    evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, model_transform=model_transform)
     logger.info(f"Running inference for {dataloader}")
     evaluator.run(dataloader)
     metrics = evaluator.state.metrics
