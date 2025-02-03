@@ -12,7 +12,7 @@ import numpy as np
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 from columbo.toxicity import embed, build_embedding, ToxicityClassifierV1, get_datasets_with_embedding, \
-    ToxicityClassifierV2, ToxicityClassifierV3
+    ToxicityClassifierV2, ToxicityClassifierV3, ToxicityClassifierV4
 import logging
 import friendlywords as fw
 from codetiming import Timer
@@ -28,6 +28,7 @@ CLASSIFIER_MAP = {
     "v1": ToxicityClassifierV1,
     "v2": ToxicityClassifierV2,
     "v3": ToxicityClassifierV3,
+    "v4": ToxicityClassifierV4,
 }
 
 def get_classifier(classifier: Union[str, Callable]=None):
@@ -155,34 +156,20 @@ def run_metrics(model, dataloader, device, log:str=None):
     recall = Recall()
     def f1_score(precision, recall):
         return (2 * precision * recall) / (precision + recall + 1e-20)
+    def model_transform(x):
+        return torch.argmax(x.to(torch.float32), dim=2).squeeze(dim=1)
     metrics = {
         "accuracy": Accuracy(),
         "recall": recall,
         "precision": precision,
-        "confusion": ConfusionMatrix(num_classes=2),
         "f1": MetricsLambda(f1_score, precision, recall),
     }
-
-    # def prepare_batch(
-    #         batch: Sequence[torch.Tensor], device: Optional[Union[str, torch.device]] = None, non_blocking: bool = False
-    # ) -> Tuple[Union[torch.Tensor, Sequence, Mapping, str, bytes], ...]:
-    #     """Prepare batch for training or evaluation: pass to a device with options."""
-    #     x, y = batch
-    #     return (
-    #         convert_tensor(x, device=device, non_blocking=non_blocking),
-    #         convert_tensor(y, device=device, non_blocking=non_blocking),
-    #     )
-
-    def model_transform(x):
-        a = torch.argmax(x.to(torch.float32), dim=2).squeeze(dim=1)
-        return a
-
     evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, model_transform=model_transform)
     logger.info(f"Running inference for {dataloader}")
     evaluator.run(dataloader)
     metrics = evaluator.state.metrics
     logger.info(f"\n{metrics}")
-    if log == "wandb":
+    if log.startswith("wandb"):
         wandb.log({
             "val_f1": metrics["f1"],
             "val_precision": metrics["precision"],
