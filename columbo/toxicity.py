@@ -111,7 +111,8 @@ class ToxicityClassifierV4(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout=.2):
         super(ToxicityClassifierV4, self).__init__()
         pool_kernel_size = pool_stride = 3
-        pool_output_size = (input_size - pool_kernel_size) // pool_stride + 1
+        pool_padding = 1
+        pool_output_size = (input_size - pool_kernel_size + 2 * pool_padding) // pool_stride + 1
         self.model = nn.Sequential(
             nn.Conv1d(1, 3, 3, padding=1),
             nn.MaxPool1d(kernel_size=3),
